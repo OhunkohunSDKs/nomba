@@ -1,7 +1,8 @@
 import { AxiosRequestConfig, create } from "axios";
 import { ApiErrorResponse, ApiResponse } from "../types/api-response.js";
 import { IssueAccessTokenRequestBody, IssueAccessTokenResponse, RefreshAccessTokenRequestBody, RefreshAccessTokenResponse, RevokeAccessTokenRequestBody, RevokeAccessTokenResponse } from "../types/auth.js";
-import { CreateCheckoutOrderRequestBody, CreateCheckoutOrderResponse } from "../types/checkout.js";
+import { BankAccountLookupRequestBody, BankAccountLookupResponse, BankTransferRequestBody, BankTransferResponse, ListBanksResponse } from "../types/bank.js";
+import { CancelCheckoutOrderRequestBody, CancelCheckoutOrderResponse, CreateCheckoutOrderRequestBody, CreateCheckoutOrderResponse, RefundCheckoutTransactionRequestBody, RefundCheckoutTransactionResponse } from "../types/checkout.js";
 import { NombaConfig } from "../types/config.js";
 import { CreateSubAccountVirtualAccountResponse, CreateSubVirtualAccountRequestBody, CreateVirtualAccountRequestBody, CreateVirtualAccountResponse, ExpireVirtualAccountResponse, GetVirtualAccountResponse, ListVirtualAccountsQuery, ListVirtualAccountsRequestBody, ListVirtualAccountsResponse, LookupVirtualAccountResponse, SuspendVirtualAccountResponse, UpdateVirtualAccountRequestBody, UpdateVirtualAccountResponse } from "../types/virtual-account.js";
 import { useAxiosError, useTryCatch } from "./hooks.js";
@@ -10,7 +11,7 @@ export const Nomba = (config: NombaConfig) => {
     const trycatch = useTryCatch(config.debug === 'error');
     const axiosError = useAxiosError();
     const req = create({
-        baseURL: `https://${config.environment === 'live' ? 'api' : 'sandbox'}.nomba.com/v1`,
+        baseURL: `https://${config.environment === 'live' ? 'api' : 'sandbox'}.nomba.com`,
         headers: {
             "Content-Type": "application/json",
             "accountId": config.account_id,
@@ -34,21 +35,22 @@ export const Nomba = (config: NombaConfig) => {
     | ApiResponse<ResponseDataType>
     | ApiErrorResponse
 
-    interface CallApiOptions {omitToken?: boolean}
     interface CallApiBaseProps {
         method: 'post' | 'get' | 'put' | 'delete';
         urlPath: string;
         body?: Record<string, any>;
         query?: Record<string, any>;
         headers?: AxiosRequestConfig['headers'];
+        version?: 1 | 2;
     }
 
     //default api call;
-    const callApiBase = async <ResponseDataType> (props: CallApiBaseProps) => {
-        const resp = await trycatch.wrap<ApiResult<ResponseDataType>>(async () => {
+    const callApiBase = async <Response extends ApiResponse> (props: CallApiBaseProps) => {
+        const resp = await trycatch.wrap<ApiResult<Response['data']>>(async () => {
+            const urlPath = `/v${props.version ?? 1}${props.urlPath}`;
             const resp = await (
-                props.method !== 'get' ? req[props.method](props.urlPath, {account_id: config.account_id, ...props.body}, {headers: props.headers, params: props.query}) :
-                req.get(props.urlPath, {params: {account_id: config.account_id, ...props.query}, headers: props.headers})
+                props.method !== 'get' ? req[props.method](urlPath, {account_id: config.account_id, ...props.body}, {headers: props.headers, params: props.query}) :
+                req.get(urlPath, {params: {account_id: config.account_id, ...props.query}, headers: props.headers})
             );
 
             return resp?.data ?? {};
@@ -66,36 +68,43 @@ export const Nomba = (config: NombaConfig) => {
     };
 
     //calls api with token check;
-    const callApi = async <ResponseDataType> (method: CallApiBaseProps['method'], urlPath: CallApiBaseProps['urlPath'], data?: Pick<CallApiBaseProps, 'body' | 'query'>, options?: CallApiOptions) => {
+    const callApi = async <Response extends ApiResponse> (method: CallApiBaseProps['method'], urlPath: CallApiBaseProps['urlPath'], options?: Pick<CallApiBaseProps, 'body' | 'query' | 'version'> & {omitToken?: boolean}) => {
         const headers: AxiosRequestConfig['headers'] = {};
         if(options?.omitToken !== true){
             await init.defineToken();
             headers.Authorization = `Bearer ${accessToken}`; //include token by default;
         }
-        return await callApiBase<ResponseDataType>({method, urlPath, body: data?.body, query: data?.query, headers});
+        return await callApiBase<Response>({method, urlPath, body: options?.body, query: options?.query, headers});
     };
     
     const handles = {
         access_token: {
-            issue: async (body: IssueAccessTokenRequestBody) => await callApi<IssueAccessTokenResponse['data']>('post', `/auth/token/issue`, {body: {client_id: config.client_id, client_secret: config.client_secret, ...body}}, {omitToken: true}),
-            refresh: async (body: RefreshAccessTokenRequestBody) => await callApi<RefreshAccessTokenResponse['data']>('post', `/auth/token/refresh`, {body}),
-            revoke: async (body: RevokeAccessTokenRequestBody) => await callApi<RevokeAccessTokenResponse['data']>('post', `/auth/token/revoke`, {body: {clientId: config.client_id, ...body}}, {omitToken: true}),
+            issue: async (body: IssueAccessTokenRequestBody) => await callApi<IssueAccessTokenResponse>('post', `/auth/token/issue`, {body: {client_id: config.client_id, client_secret: config.client_secret, ...body}, omitToken: true}),
+            refresh: async (body: RefreshAccessTokenRequestBody) => await callApi<RefreshAccessTokenResponse>('post', `/auth/token/refresh`, {body}),
+            revoke: async (body: RevokeAccessTokenRequestBody) => await callApi<RevokeAccessTokenResponse>('post', `/auth/token/revoke`, {body: {clientId: config.client_id, ...body}, omitToken: true}),
         },
         virtual_account: {
-            create: async (body: CreateVirtualAccountRequestBody) => await callApi<CreateVirtualAccountResponse['data']>('post', `/accounts/virtual`, {body}),
-            create_sub_account: async (subAccountId: string, body: CreateSubVirtualAccountRequestBody) => await callApi<CreateSubAccountVirtualAccountResponse['data']>('post', `/accounts/virtual/${subAccountId}`, {body}),
-            list: async (query?: ListVirtualAccountsQuery, body?: ListVirtualAccountsRequestBody) => await callApi<ListVirtualAccountsResponse['data']>('post', `/accounts/virtual/list`, {body, query}),
+            create: async (body: CreateVirtualAccountRequestBody) => await callApi<CreateVirtualAccountResponse>('post', `/accounts/virtual`, {body}),
+            create_sub_account: async (subAccountId: string, body: CreateSubVirtualAccountRequestBody) => await callApi<CreateSubAccountVirtualAccountResponse>('post', `/accounts/virtual/${subAccountId}`, {body}),
+            list: async (query?: ListVirtualAccountsQuery, body?: ListVirtualAccountsRequestBody) => await callApi<ListVirtualAccountsResponse>('post', `/accounts/virtual/list`, {body, query}),
             
             //virtualAccountIdentifier = account reference or virtual account number;
-            get: async (virtualAccountIdentifier: string) => await callApi<GetVirtualAccountResponse['data']>('get', `/accounts/virtual/${virtualAccountIdentifier}`),
-            update: async (virtualAccountIdentifier: string, body: UpdateVirtualAccountRequestBody) => await callApi<UpdateVirtualAccountResponse['data']>('put', `/accounts/virtual/${virtualAccountIdentifier}`, {body}),
-            expire: async (virtualAccountIdentifier: string) => await callApi<ExpireVirtualAccountResponse['data']>('delete', `/accounts/virtual/${virtualAccountIdentifier}`),
+            get: async (virtualAccountIdentifier: string) => await callApi<GetVirtualAccountResponse>('get', `/accounts/virtual/${virtualAccountIdentifier}`),
+            update: async (virtualAccountIdentifier: string, body: UpdateVirtualAccountRequestBody) => await callApi<UpdateVirtualAccountResponse>('put', `/accounts/virtual/${virtualAccountIdentifier}`, {body}),
+            expire: async (virtualAccountIdentifier: string) => await callApi<ExpireVirtualAccountResponse>('delete', `/accounts/virtual/${virtualAccountIdentifier}`),
 
-            suspend: async () => await callApi<SuspendVirtualAccountResponse['data']>('put', `/accounts/suspend/${config.account_id}`),
-            lookup: async (virtualAccountNumber: string) => await callApi<LookupVirtualAccountResponse['data']>('get', `/accounts/virtual/${virtualAccountNumber}`),
+            suspend: async () => await callApi<SuspendVirtualAccountResponse>('put', `/accounts/suspend/${config.account_id}`),
+            lookup: async (virtualAccountNumber: string) => await callApi<LookupVirtualAccountResponse>('get', `/accounts/virtual/${virtualAccountNumber}`),
         },
         checkout: {
-            create: async (body: CreateCheckoutOrderRequestBody) => await callApi<CreateCheckoutOrderResponse['data']>('post', `/checkout/order`, {body}),
+            create: async (body: CreateCheckoutOrderRequestBody) => await callApi<CreateCheckoutOrderResponse>('post', `/checkout/order`, {body}),
+            cancel: async (body: CancelCheckoutOrderRequestBody) => await callApi<CancelCheckoutOrderResponse>('post', `/checkout/order/cancel`, {body}),
+            refund: async (body: RefundCheckoutTransactionRequestBody) => await callApi<RefundCheckoutTransactionResponse>('post', `/checkout/order/refund`, {body}),
+        },
+        bank: {
+            list: async () => await callApi<ListBanksResponse>('get', `/transfers/banks`),
+            account_lookup: async (body: BankAccountLookupRequestBody) => await callApi<BankAccountLookupResponse>('post', `/transfers/banks/lookup`, {body}),
+            transfer: async (body: BankTransferRequestBody) => await callApi<BankTransferResponse>('post', `/transfers/banks/lookup`, {body, version: 2}),
         },
     };
 

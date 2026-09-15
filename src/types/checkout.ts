@@ -94,3 +94,56 @@ export interface CreateCheckoutOrderData {
 /** Response returned after creating an online checkout order. */
 export type CreateCheckoutOrderResponse =
   ApiResponse<CreateCheckoutOrderData>;
+
+
+/** Details used to refund a checkout transaction. */
+export interface RefundCheckoutTransactionRequestBody {
+  /** The ID of the transaction to be refunded. */
+  transactionId: string;
+
+  /** The amount to be refunded. */
+  amount?: number;
+
+  /**
+   * The account number for the refund.
+   *
+   * Required string length: 10.
+   */
+  accountNumber?: string;
+
+  /** The bank code for the refund. */
+  bankCode?: string;
+}
+
+/** Response data returned after refunding a checkout transaction. */
+export interface RefundCheckoutTransactionData {
+  /** Indicates whether the operation was successful. */
+  success: boolean;
+
+  /** A message describing the result of the operation. */
+  message: string;
+}
+
+/** Response returned after refunding a checkout transaction. */
+export type RefundCheckoutTransactionResponse =
+  ApiResponse<RefundCheckoutTransactionData>;
+
+
+/** Details used to cancel an incomplete or pending checkout order. */
+export interface CancelCheckoutOrderRequestBody {
+  /** The unique reference of the checkout order to cancel. */
+  orderReference: string;
+}
+
+/** Response data returned after cancelling a checkout order. */
+export interface CancelCheckoutOrderData {
+  /** Indicates whether the cancellation was successful. */
+  success: boolean;
+
+  /** A message describing the result of the cancellation. */
+  message: string;
+}
+
+/** Response returned after cancelling a checkout order. */
+export type CancelCheckoutOrderResponse =
+  ApiResponse<CancelCheckoutOrderData>;

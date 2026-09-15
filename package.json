@@ -1,6 +1,6 @@
 {
   "name": "@ohunkohun/nomba-sdk",
-  "version": "1.0.5",
+  "version": "1.0.0",
   "description": "A TypeScript SDK for the Nomba API",
   "scripts": {
     "dev": "tsx watch src/examples/server.ts",

@@ -14,11 +14,10 @@ app.get('/', async (req, res) => {
     let output;
     
     output = {message: `Server running...`};
-
-    //run an example;
-    // output = await examples.auth().issueAccessToken();
-    // output = await examples.auth().revokeAccessToken();
     
+    //example;
+
+    //configure client;
     const config: NombaConfig = {
         account_id: process.env.ACCOUNT_ID!,
         client_id: process.env.CLIENT_ID!,
@@ -27,6 +26,9 @@ app.get('/', async (req, res) => {
         debug: 'error',
     };
     const client = Nomba(config);
+
+    //call an endpoint;
+    output = await client.virtual_account.expire(`virtualAccountRef`);
     
     // const expirySeconds = 10 * 60
     // const expiryDate = new Date(
@@ -39,7 +41,12 @@ app.get('/', async (req, res) => {
     //     expiryDate
     // });
 
-    // output = await client.virtual_account.
+    if(output?.status){//success
+        console.log('success::', output?.data);
+    }
+    else {//failed;
+        console.log('failed::', output?.description);
+    }
 
     res.status(200).json(output);
 });
