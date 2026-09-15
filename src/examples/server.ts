@@ -1,0 +1,55 @@
+import dotenv from 'dotenv';
+import express from 'express';
+import { Nomba } from '../resources/client.js';
+import { NombaConfig } from '../types/config.js';
+
+dotenv.config();
+const app = express();
+
+app.use(express.urlencoded({extended: true}));
+app.use(express.json());
+app.use(express.raw());
+
+app.get('/', async (req, res) => {
+    let output;
+    
+    output = {message: `Server running...`};
+
+    //run an example;
+    // output = await examples.auth().issueAccessToken();
+    // output = await examples.auth().revokeAccessToken();
+    
+    const config: NombaConfig = {
+        account_id: process.env.ACCOUNT_ID!,
+        client_id: process.env.CLIENT_ID!,
+        client_secret: process.env.CLIENT_SECRET!,
+        environment: process.env.ENVIRONMENT! as NombaConfig['environment'],
+        debug: 'error',
+    };
+    const client = Nomba(config);
+    
+    // const expirySeconds = 10 * 60
+    // const expiryDate = new Date(
+    //     new Date().getTime() + expirySeconds * 1000
+    // ).toISOString();
+    // output = await client.virtual_account.create({
+    //     accountName: 'Test One',
+    //     accountRef: 'hmm',
+    //     currency: 'NGN',
+    //     expiryDate
+    // });
+
+    // output = await client.virtual_account.
+
+    res.status(200).json(output);
+});
+
+//start local server
+if(process.env.IS_LOCAL_MACHINE === 'true'){
+    const port = 4000;
+    app.listen(port, () => {
+        console.log(`[http] listening on port ${port}`);
+    });
+}
+
+export default app;
