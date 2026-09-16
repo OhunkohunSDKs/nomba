@@ -28,18 +28,7 @@ app.get('/', async (req, res) => {
     const client = Nomba(config);
 
     //call an endpoint;
-    output = await client.virtual_account.expire(`virtualAccountRef`);
-    
-    // const expirySeconds = 10 * 60
-    // const expiryDate = new Date(
-    //     new Date().getTime() + expirySeconds * 1000
-    // ).toISOString();
-    // output = await client.virtual_account.create({
-    //     accountName: 'Test One',
-    //     accountRef: 'hmm',
-    //     currency: 'NGN',
-    //     expiryDate
-    // });
+    output = await client.virtual_account.lookup('1234567890');
 
     if(output?.status){//success
         console.log('success::', output?.data);

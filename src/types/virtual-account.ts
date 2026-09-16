@@ -1,6 +1,9 @@
 import { ApiResponse } from "./api-response.js";
 import { Currency } from "./checkout.js";
 
+/** Account reference or virtual account number. */
+export type VirtualAccountIdentifier = string;
+
 /** Supported identifier types for a virtual account. */
 export type VirtualAccountIdentifierType =
   | "BVN"
@@ -38,6 +41,9 @@ export interface VirtualAccountData {
 
   /** Callback URL. */
   callbackUrl?: string;
+
+  /** The expiry date. */
+  expiryDate?: string;
 
   /** Whether the virtual account is expired or not. */
   expired: boolean;

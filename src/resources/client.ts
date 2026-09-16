@@ -49,8 +49,10 @@ export const Nomba = (config: NombaConfig) => {
         const resp = await trycatch.wrap<ApiResult<Response['data']>>(async () => {
             const urlPath = `/v${props.version ?? 1}${props.urlPath}`;
             const resp = await (
-                props.method !== 'get' ? req[props.method](urlPath, {account_id: config.account_id, ...props.body}, {headers: props.headers, params: props.query}) :
-                req.get(urlPath, {params: {account_id: config.account_id, ...props.query}, headers: props.headers})
+                props.method === 'delete' ? req[props.method](urlPath, {headers: props.headers, params: props.query}) :
+                props.method === 'put' ? req[props.method](urlPath, props.body, {headers: props.headers, params: props.query}) :
+                props.method === 'post' ? req[props.method](urlPath, props.body, {headers: props.headers, params: props.query}) :
+                req[props.method](urlPath, {headers: props.headers, params: props.query})
             );
 
             return resp?.data ?? {};
@@ -88,13 +90,13 @@ export const Nomba = (config: NombaConfig) => {
             create_sub_account: async (subAccountId: string, body: CreateSubVirtualAccountRequestBody) => await callApi<CreateSubAccountVirtualAccountResponse>('post', `/accounts/virtual/${subAccountId}`, {body}),
             list: async (query?: ListVirtualAccountsQuery, body?: ListVirtualAccountsRequestBody) => await callApi<ListVirtualAccountsResponse>('post', `/accounts/virtual/list`, {body, query}),
             
-            //virtualAccountIdentifier = account reference or virtual account number;
-            get: async (virtualAccountIdentifier: string) => await callApi<GetVirtualAccountResponse>('get', `/accounts/virtual/${virtualAccountIdentifier}`),
-            update: async (virtualAccountIdentifier: string, body: UpdateVirtualAccountRequestBody) => await callApi<UpdateVirtualAccountResponse>('put', `/accounts/virtual/${virtualAccountIdentifier}`, {body}),
-            expire: async (virtualAccountIdentifier: string) => await callApi<ExpireVirtualAccountResponse>('delete', `/accounts/virtual/${virtualAccountIdentifier}`),
+            get: async (/** Account reference or virtual account number. */ virtualAccountIdentifier: string) => await callApi<GetVirtualAccountResponse>('get', `/accounts/virtual/${virtualAccountIdentifier}`),
+            update: async (/** Account reference or virtual account number. */ virtualAccountIdentifier: string, body: UpdateVirtualAccountRequestBody) => await callApi<UpdateVirtualAccountResponse>('put', `/accounts/virtual/${virtualAccountIdentifier}`, {body}),
+            expire: async (/** Account reference or virtual account number. */ virtualAccountIdentifier: string) => await callApi<ExpireVirtualAccountResponse>('delete', `/accounts/virtual/${virtualAccountIdentifier}`),
 
-            suspend: async () => await callApi<SuspendVirtualAccountResponse>('put', `/accounts/suspend/${config.account_id}`),
-            lookup: async (virtualAccountNumber: string) => await callApi<LookupVirtualAccountResponse>('get', `/accounts/virtual/${virtualAccountNumber}`),
+            // suspend: async () => await callApi<SuspendVirtualAccountResponse>('put', `/accounts/suspend/${config.account_id}`),
+            suspend: async (accountId: string) => await callApi<SuspendVirtualAccountResponse>('put', `/accounts/suspend/${accountId}`),
+            lookup: async (/** Account reference or virtual account number. */ virtualAccountIdentifier: string) => await callApi<LookupVirtualAccountResponse>('get', `/accounts/virtual/${virtualAccountIdentifier}`),
         },
         checkout: {
             create: async (body: CreateCheckoutOrderRequestBody) => await callApi<CreateCheckoutOrderResponse>('post', `/checkout/order`, {body}),
