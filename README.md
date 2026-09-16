@@ -15,13 +15,13 @@ This SDK currently supports Nomba's APIs, including:
 
 You can install the published npm package directly:
 
-```
+```bash
 npm install @ohunkohun/nomba
 ```
 
 Then import and initialize the SDK:
 
-```
+```ts
 import { Nomba } from "@ohunkohun/nomba";
 
 const client = Nomba({
@@ -35,7 +35,7 @@ const client = Nomba({
 
 You can now use the available API resources through the client:
 
-```
+```ts
 const response = await client.virtual_account.expire("virtualAccountRef");
 
 if (response?.status) {
@@ -47,7 +47,7 @@ if (response?.status) {
 
 For example, creating a virtual account:
 
-```
+```ts
 const response = await client.virtual_account.create({
     accountName: "Test One",
     accountRef: "test-account-ref",
@@ -66,7 +66,7 @@ const response = await client.virtual_account.create({
 
 If you have cloned this repository and want to work with the source code directly:
 
-```
+```bash
 git clone https://github.com/OhunkohunSDKs/nomba
 cd nomba
 npm install
@@ -74,7 +74,7 @@ npm install
 
 Build the SDK with:
 
-```
+```bash
 npm run build
 ```
 
@@ -88,7 +88,7 @@ The repository contains a simple example application for testing the SDK.
 
 For example:
 
-```
+```ts
 import { NombaConfig } from "@ohunkohun/nomba";
 
 const config: NombaConfig = {
@@ -118,7 +118,7 @@ The example does not form part of the published npm package. It is included in t
 
 The examples can use a `.env` file for configuration:
 
-```
+```env
 ACCOUNT_ID="your-account-id"
 CLIENT_ID="your-client-id"
 CLIENT_SECRET="your-client-secret"
@@ -127,7 +127,7 @@ ENVIRONMENT="sandbox"
 
 Using `.env` is **not required**. Values can also be supplied directly:
 
-```
+```ts
 const config: NombaConfig = {
     account_id: "your-account-id",
     client_id: "your-client-id",
@@ -144,13 +144,13 @@ Using environment variables is recommended for sensitive credentials such as `cl
 
 To test the SDK as a consumer would, install the published package:
 
-```
+```bash
 npm install @ohunkohun/nomba
 ```
 
 Then import it normally:
 
-```
+```ts
 import { Nomba } from "@ohunkohun/nomba";
 ```
 
@@ -169,19 +169,19 @@ This allows you to test the package's:
 
 Start the development environment with:
 
-```
+```bash
 npm run dev
 ```
 
 To watch for TypeScript errors:
 
-```
+```bash
 npm run types:watch
 ```
 
 To create a production build:
 
-```
+```bash
 npm run build
 ```
 
@@ -191,13 +191,13 @@ npm run build
 
 If you only want to **use the SDK**, installing the npm package is recommended:
 
-```
+```bash
 npm install @ohunkohun/nomba
 ```
 
 If you want to **contribute to, modify, or inspect the SDK source code**, clone the repository:
 
-```
+```bash
 git clone https://github.com/OhunkohunSDKs/nomba
 cd nomba
 npm install
